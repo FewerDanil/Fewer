@@ -1,13 +1,34 @@
 ﻿<Window x:Class="Fewer.Client.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="350" Width="525" Background="Honeydew">
+        Title="MainWindow" Height="350" Width="300" Background="Honeydew">
     <Grid>
 
-        <Button Content="Очистить" Height="25" Width="60" Background="Beige" Margin="362,285,95,10"/>
-        <ListBox Margin="10,64,274,10"/>
-        <ListBox Margin="272,64,10,40"/>
-        <Label Content="Ты очистишь:"/>
+        <Button Content="Очистить" Height="25" Width="60" Background="Beige" Margin="222,285,10,10" IsEnabled="True"/>
+      
+        <ListBox Margin="10,58,10,76"/>
+        
+        <Label Content="Будет очищено:" Margin="10,252,139,40"/>
+        <Label Content="Анализ диска:" Margin="20,25,20,262"/>
+        
+        <Menu Margin="0,0,0,301">
+            
+            <MenuItem Header="Disk">
+                
+                <MenuItem Header="Disk C:"/>
+                <Separator/>
+                <MenuItem Header="Disk D:"/>
+
+            </MenuItem>
+            
+        </Menu>
+        
+        
+        
+        
+        
+        
+       
                
       
     </Grid>
