@@ -1,10 +1,15 @@
 ﻿<Window x:Class="Fewer.Client.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="350" Width="525">
+        Title="MainWindow" Height="350" Width="525" Background="Honeydew">
     <Grid>
-        <Button Content="AAAA"/>
-        
-        <Button Content="DDDD"/>
+
+        <Button Content="Очистить" Height="25" Width="60" Background="Beige" Margin="362,285,95,10"/>
+        <ListBox Margin="10,64,274,10"/>
+        <ListBox Margin="272,64,10,40"/>
+        <Label Content="Ты очистишь:"/>
+               
+      
     </Grid>
+
 </Window>
