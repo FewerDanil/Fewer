@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace Fewer.Library
 {
-    public class Class1
+    public interface IFewer
     {
+        
     }
 }
