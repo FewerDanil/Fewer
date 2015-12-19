@@ -4,5 +4,7 @@
         Title="MainWindow" Height="350" Width="525">
     <Grid>
         <Button Content="AAAA"/>
+        
+        <Button Content="DDDD"/>
     </Grid>
 </Window>
