@@ -17,24 +17,17 @@ namespace Fewer.Library
             return listDiscs;
         }
 
-        public static List<File> GetFiles(Settings settings = null)
+        public static List<File> GetFiles()
         {
+            if(!Settings.IsSet) Settings.SetSettings();
+
             List<File> listFile = new List<File>();  // list for return
             long maxSize = 0;
             long minSize = 0;
             DateTime minDate = DateTime.Now;
             DateTime maxDate = DateTime.Now;
 
-            if (settings == null)  // init settings
-            {
-                settings = new Settings();
-                settings.MinSize = 1;
-                settings.MinDate = DateTime.Now/*.AddDays(-10)*/;
-                //settings.Disks = GetDisks();
-                settings.Disks = new List<string>() { @"test" }; // for test only!                
-            }                   
-
-            foreach (var disk in settings.Disks) //scan every disk
+            foreach (var disk in Settings.Disks) //scan every disk
             {
                 String[] allFiles = Directory.GetFiles(disk, "*.*", System.IO.SearchOption.AllDirectories); // get all file names in disk(directory)
                 List<FileInfo> files = new List<FileInfo>();
@@ -56,7 +49,7 @@ namespace Fewer.Library
                     if (item.CreationTime < minDate) minDate = item.CreationTime;
                     if (item.CreationTime > maxDate) maxDate = item.CreationTime;
 
-                    if (item.Length > settings.MinSize && item.CreationTime < settings.MinDate)
+                    if (item.Length > Settings.MinSize && item.CreationTime < Settings.MinDate)
                     {
                         File file = new File(item.FullName);
                         file.FileTime = item.CreationTime;
@@ -81,12 +74,12 @@ namespace Fewer.Library
                     return files;
 
                 case SortingCriteria.FileUseDate:
+
                      files.Sort((a, b) => a.FileTime.CompareTo(b.FileTime));
                      SetFilePriority(files, SortingCriteria.FileUseDate);
                      return files;
                     
-                default:
-                    
+                default:                    
                         return files;
                     
             }
@@ -132,13 +125,5 @@ namespace Fewer.Library
             }
         }                
         
-        //static int FileDateRating(DateTime currentFileTime, DateTime minDate, DateTime maxDate)
-        //{
-        //    int dif = maxDate.Minute - minDate.Minute;
-        //    int ratingTime = currentFileTime.Minute * dif / 100;
-        //    return ratingTime;
-        //}
-
-
     }
 }
