@@ -3,42 +3,33 @@ using System.IO;
 
 namespace Fewer.Library
 {
-    public class File : ICloneable
-
+    public class File
     {
-        string _fileName;
-        public string FileName { get { return _fileName; } set { _fileName = value; } }
-        int _filePrioritySize;
-        public int FilePrioritySize { get { return _filePrioritySize; } set { _filePrioritySize = value; } }
-        int _filePriorityTime;
-        public int FilePriorityTime { get { return _filePriorityTime; } set { _filePriorityTime = value; } }
-        DateTime _fileTime;
-        public DateTime FileTime { get { return _fileTime; } set { _fileTime = value; } }
-        long _fileSize;
-        public long FileSize { get { return _fileSize; } set { _fileSize = value; } }
+        public string Name { get; }
+        public DateTime LastChange { get; }
+        public long Size { get; }
+        public string SizeString { get { return (Size / 1048576) + " mb"; } }
+        public float Score { get { return GetScore(); } }
 
-        internal File(string fileName)
+        private string _path;
+
+        internal File (string path, string name, DateTime lastChange, long size)
         {
-            _fileName = fileName;
+            _path = path;
+            Name = name;
+            LastChange = lastChange;
+            Size = size;
         }
         
         internal void Delete()
         {
-            try
-            {
-                FileInfo fi = new FileInfo(_fileName);
-                fi.Delete();
-            }
-            catch (Exception)
-            {                
-                throw;
-            }
-           
+            FileInfo fileInfo = new FileInfo(_path);
+            fileInfo.Delete();
         }
 
-        public object Clone()
+        internal float GetScore()
         {
-            return (object)this;
+            return 1.0f;
         }
     }
 }

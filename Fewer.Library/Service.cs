@@ -8,31 +8,49 @@ namespace Fewer.Library
     {
         public static List<string> GetDisks()
         {
-            List<string> listDiscs = new List<string>();
-            DriveInfo[] allDrives = DriveInfo.GetDrives();
-            foreach (var item in allDrives)
+            List<string> disks = new List<string>();
+            DriveInfo[] drives = DriveInfo.GetDrives();
+
+            foreach (DriveInfo drive in drives)
             {
-                listDiscs.Add(item.Name);
+                if (drive.DriveType == DriveType.Fixed)
+                {
+                    disks.Add(drive.Name);
+                }
             }
-            return listDiscs;
+
+            return disks;
         }
 
-        public static List<File> GetFiles(Settings settings = null)
+        public static List<File> GetFiles(Settings settings)
         {
-            List<File> listFile = new List<File>();  // list for return
+            var files = new List<File>();
+
+            foreach (string disk in settings.Disks)
+            {
+                string[] filesPaths = Directory.GetFiles(disk, "*.*", SearchOption.TopDirectoryOnly);
+
+                foreach(string filePath in filesPaths)
+                {
+                    FileInfo fileInfo = new FileInfo(filePath);
+
+                    if(fileInfo.Length >= settings.MinSize && fileInfo.LastAccessTime >= settings.MinDate)
+                    {
+                        files.Add(new File(filePath, fileInfo.Name, fileInfo.LastAccessTime, fileInfo.Length));
+                    }
+                }
+            }
+
+            return files;
+        }
+        /*
+        public static List<File> GetFiles(Settings settings)
+        {
+            List<File> files = new List<File>();
             long maxSize = 0;
             long minSize = 0;
             DateTime minDate = DateTime.Now;
             DateTime maxDate = DateTime.Now;
-
-            if (settings == null)  // init settings
-            {
-                settings = new Settings();
-                settings.MinSize = 1;
-                settings.MinDate = DateTime.Now/*.AddDays(-10)*/;
-                //settings.Disks = GetDisks();
-                settings.Disks = new List<string>() { @"test" }; // for test only!                
-            }                   
 
             foreach (var disk in settings.Disks) //scan every disk
             {
@@ -131,7 +149,7 @@ namespace Fewer.Library
                 item.Delete();               
             }
         }                
-        
+        */
         //static int FileDateRating(DateTime currentFileTime, DateTime minDate, DateTime maxDate)
         //{
         //    int dif = maxDate.Minute - minDate.Minute;
