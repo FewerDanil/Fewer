@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Fewer.Library
 {
@@ -8,122 +9,143 @@ namespace Fewer.Library
     {
         public static List<string> GetDisks()
         {
-            List<string> listDiscs = new List<string>();
-            DriveInfo[] allDrives = DriveInfo.GetDrives();
-            foreach (var item in allDrives)
+            List<string> disks = new List<string>();
+            DriveInfo[] drives = DriveInfo.GetDrives();
+
+            foreach (DriveInfo drive in drives)
             {
-                listDiscs.Add(item.Name);
+                if (drive.DriveType == DriveType.Fixed)
+                {
+                    disks.Add(drive.Name);
+                }
             }
-            return listDiscs;
+
+            return disks;
+        }
+
+        private static void AddFiles(string path, List<string> files)
+        {
+            try
+            {
+                Directory.GetFiles(path)
+                    .ToList()
+                    .ForEach(s => files.Add(s));
+
+                Directory.GetDirectories(path)
+                    .ToList()
+                    .ForEach(s => AddFiles(s, files));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+
+            }
         }
 
         public static List<File> GetFiles()
         {
-            if(!Settings.IsSet) Settings.SetSettings();
+            var filesInfos = new List<FileInfo>();
 
-            List<File> listFile = new List<File>();  // list for return
-            long maxSize = 0;
-            long minSize = 0;
-            DateTime minDate = DateTime.Now;
-            DateTime maxDate = DateTime.Now;
-
-            foreach (var disk in Settings.Disks) //scan every disk
+            foreach (string disk in Settings.Disks)
             {
-                String[] allFiles = Directory.GetFiles(disk, "*.*", System.IO.SearchOption.AllDirectories); // get all file names in disk(directory)
-                List<FileInfo> files = new List<FileInfo>();
-                foreach (var file in allFiles)  // init FileInfo list
+                List<string> filesPaths = new List<string>();
+                AddFiles(disk + "test\\", filesPaths);
+
+                foreach(string filePath in filesPaths)
                 {
-                    FileInfo fi = new FileInfo(file);
-                    files.Add(fi);
-                }
+                    FileInfo fileInfo = new FileInfo(filePath);
 
-                maxSize = files[0].Length;
-                minSize = files[0].Length;
-                maxDate = files[0].CreationTime;
-                minDate = files[0].CreationTime;
-
-                foreach (var item in files)
-                {
-                    if (item.Length > maxSize) maxSize = item.Length;
-                    if (item.Length < minSize) minSize = item.Length;
-                    if (item.CreationTime < minDate) minDate = item.CreationTime;
-                    if (item.CreationTime > maxDate) maxDate = item.CreationTime;
-
-                    if (item.Length > Settings.MinSize && item.CreationTime < Settings.MinDate)
+                    try
                     {
-                        File file = new File(item.FullName);
-                        file.FileTime = item.CreationTime;
-                        file.FileSize = item.Length;
-                        listFile.Add(file);
+                        if (fileInfo.Length >= Settings.MinSize && fileInfo.LastAccessTime >= Settings.MinDate && fileInfo.IsReadOnly == false)
+                        {
+                            filesInfos.Add(fileInfo);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+
                     }
                 }
             }
-            SortFiles(listFile, SortingCriteria.FileSize);
-            SortFiles(listFile, SortingCriteria.FileUseDate);
-            return listFile;
-        }
 
-        public static List<File> SortFiles(List<File> files, SortingCriteria sortingCriteria)
-        {           
-            switch (sortingCriteria)
-            {                
-                case SortingCriteria.FileSize:
+            var files = new List<File>();
+            long minSize = 0, maxSize = 0;
+            DateTime minDate = DateTime.Now, maxDate = DateTime.Now;
 
-                    files.Sort((a, b) => a.FileSize.CompareTo(b.FileSize));
-                    SetFilePriority(files, SortingCriteria.FileSize);
-                    return files;
-
-                case SortingCriteria.FileUseDate:
-
-                     files.Sort((a, b) => a.FileTime.CompareTo(b.FileTime));
-                     SetFilePriority(files, SortingCriteria.FileUseDate);
-                     return files;
-                    
-                default:                    
-                        return files;
-                    
-            }
-        }
-
-
-        static void SetFilePriority(List<File> fileList, SortingCriteria sort)
-        {
-           
-            double koef = GetKoef(fileList.Count);
-
-            if (sort == SortingCriteria.FileUseDate)
+            for (int i = 0; i < filesInfos.Count; i++)
             {
-                int count = fileList.Count;
-                foreach (File item in fileList)
+                if(i == 0)
                 {
-                    item.FilePriorityTime = (int)(count * koef);
-                    count--;
+                    minSize = filesInfos[i].Length;
+                    maxSize = filesInfos[i].Length;
+                    minDate = filesInfos[i].LastAccessTime;
+                    maxDate = filesInfos[i].LastAccessTime;
                 }
-            }
-            else
-            {
-                int count = 1;
-                foreach (File item in fileList)
+                else
                 {
-                    item.FilePrioritySize = (int)(count * koef);
-                    count++;
+                    if(filesInfos[i].Length < minSize)
+                    {
+                        minSize = filesInfos[i].Length;
+                    }
+                    else if(filesInfos[i].Length > maxSize)
+                    {
+                        maxSize = filesInfos[i].Length;
+                    }
+
+                    if (filesInfos[i].LastAccessTime < minDate)
+                    {
+                        minDate = filesInfos[i].LastAccessTime;
+                    }
+                    else if (filesInfos[i].LastAccessTime > maxDate)
+                    {
+                        minDate = filesInfos[i].LastAccessTime;
+                    }
                 }
+
+                File file = new File(filesInfos[i].FullName, filesInfos[i].Name, filesInfos[i].LastAccessTime, filesInfos[i].Length);
+                files.Add(file);
             }
-        }
 
-
-        static double GetKoef(int length, int range = 100)
-        {
-            return range / length;
-        }
-
-        public static void DeleteFiles(List<File> files)
-        {
-            foreach (var item in files)
+            foreach(File file in files)
             {
-                item.Delete();               
+                SetScore(file, minSize, maxSize, minDate, maxDate);
             }
-        }                
-        
+
+            return files;
+        }
+
+        public static List<bool> DeleteFiles(List<File> files)
+        {
+            List<bool> results = new List<bool>();
+
+            foreach(File file in files)
+            {
+                var result = file.Delete();
+
+                results.Add(result);
+            }
+
+            return results;
+        }
+
+        private static void SetScore(File file, long minSize, long maxSize, DateTime minDate, DateTime maxDate)
+        {
+            float score;
+            
+            float sizeScore = (float)file.Size / ((float)maxSize - (float)minSize);
+            float dateScore = (float)file.LastChange.Ticks / (float)maxDate.Ticks;
+            score = (sizeScore * 10) + (dateScore * 0);
+
+            if (score > 10.0f)
+            {
+                score = 10.0f;
+            }
+            else if(float.IsNaN(score))
+            {
+                score = 0;
+            }
+
+            file.SetScore(score);
+        }
     }
 }

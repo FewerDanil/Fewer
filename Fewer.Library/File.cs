@@ -3,42 +3,45 @@ using System.IO;
 
 namespace Fewer.Library
 {
-    public class File : ICloneable
-
+    public class File
     {
-        string _fileName;
-        public string FileName { get { return _fileName; } set { _fileName = value; } }
-        int _filePrioritySize;
-        public int FilePrioritySize { get { return _filePrioritySize; } set { _filePrioritySize = value; } }
-        int _filePriorityTime;
-        public int FilePriorityTime { get { return _filePriorityTime; } set { _filePriorityTime = value; } }
-        DateTime _fileTime;
-        public DateTime FileTime { get { return _fileTime; } set { _fileTime = value; } }
-        long _fileSize;
-        public long FileSize { get { return _fileSize; } set { _fileSize = value; } }
+        public string Name { get; }
+        public string FullName { get { return _path; } }
+        public DateTime LastChange { get; }
+        public long Size { get; }
+        public string SizeString { get { return string.Format("{0:0.#} mb", (float)Size / 1048576.0f); } }
+        public float Score { get { return _score; } }
+        public string ScoreString { get { return string.Format("{0:0.#}", _score); } }
 
-        internal File(string fileName)
+        private float _score;
+        private string _path;
+
+        internal File (string path, string name, DateTime lastChange, long size)
         {
-            _fileName = fileName;
+            _path = path;
+            Name = name;
+            LastChange = lastChange;
+            Size = size;
         }
         
-        internal void Delete()
+        internal bool Delete()
         {
             try
             {
-                FileInfo fi = new FileInfo(_fileName);
-                fi.Delete();
+                FileInfo fileInfo = new FileInfo(_path);
+                fileInfo.Delete();
             }
-            catch (Exception)
-            {                
-                throw;
+            catch (Exception ex)
+            {
+                return false;
             }
-           
+
+            return true;
         }
 
-        public object Clone()
+        internal void SetScore(float score)
         {
-            return (object)this;
+            _score = score;
         }
     }
 }
