@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Fewer.Library;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,6 +24,25 @@ namespace Fewer.Client
         public MainWindow()
         {
             InitializeComponent();
+            this.Loaded += MainWindow_Loaded;
+            
+        }
+
+        void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            //test Service.GetDisks();
+            foreach (var item in Service.GetDisks())
+            {
+                listBoxMain.Items.Add(item);
+            }
+            
+            //test Service.GetFiles();
+            foreach (File item in Service.GetFiles())
+            {
+                int pri = item.FilePrioritySize;
+                listBoxMain.Items.Add(item.FileName + " Priority to delete = " + pri );
+            }
+
         }
     }
 }
