@@ -46,5 +46,12 @@ namespace Fewer.Library
         {
             _score = score;
         }
+
+        internal void test2()
+        {
+            var a = 0;
+
+            a++;
+        }
     }
 }

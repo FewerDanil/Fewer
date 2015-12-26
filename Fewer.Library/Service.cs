@@ -48,7 +48,7 @@ namespace Fewer.Library
             foreach (string disk in Settings.Disks)
             {
                 List<string> filesPaths = new List<string>();
-                AddFiles(disk + "test\\", filesPaths);
+                AddFiles(disk + "totalcmd\\", filesPaths);
 
                 foreach(string filePath in filesPaths)
                 {
