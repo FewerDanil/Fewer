@@ -22,6 +22,7 @@ namespace Fewer.Library
             return disks;
         }
 
+<<<<<<< HEAD
         public static List<File> GetFiles(Settings settings)
         {
             var files = new List<File>();
@@ -47,12 +48,23 @@ namespace Fewer.Library
         public static List<File> GetFiles(Settings settings)
         {
             List<File> files = new List<File>();
+=======
+        public static List<File> GetFiles()
+        {
+            if(!Settings.IsSet) Settings.SetSettings();
+
+            List<File> listFile = new List<File>();  // list for return
+>>>>>>> origin/Dima
             long maxSize = 0;
             long minSize = 0;
             DateTime minDate = DateTime.Now;
             DateTime maxDate = DateTime.Now;
 
+<<<<<<< HEAD
             foreach (var disk in settings.Disks) //scan every disk
+=======
+            foreach (var disk in Settings.Disks) //scan every disk
+>>>>>>> origin/Dima
             {
                 String[] allFiles = Directory.GetFiles(disk, "*.*", System.IO.SearchOption.AllDirectories); // get all file names in disk(directory)
                 List<FileInfo> files = new List<FileInfo>();
@@ -74,7 +86,7 @@ namespace Fewer.Library
                     if (item.CreationTime < minDate) minDate = item.CreationTime;
                     if (item.CreationTime > maxDate) maxDate = item.CreationTime;
 
-                    if (item.Length > settings.MinSize && item.CreationTime < settings.MinDate)
+                    if (item.Length > Settings.MinSize && item.CreationTime < Settings.MinDate)
                     {
                         File file = new File(item.FullName);
                         file.FileTime = item.CreationTime;
@@ -99,12 +111,12 @@ namespace Fewer.Library
                     return files;
 
                 case SortingCriteria.FileUseDate:
+
                      files.Sort((a, b) => a.FileTime.CompareTo(b.FileTime));
                      SetFilePriority(files, SortingCriteria.FileUseDate);
                      return files;
                     
-                default:
-                    
+                default:                    
                         return files;
                     
             }
@@ -149,6 +161,7 @@ namespace Fewer.Library
                 item.Delete();               
             }
         }                
+<<<<<<< HEAD
         */
         //static int FileDateRating(DateTime currentFileTime, DateTime minDate, DateTime maxDate)
         //{
@@ -158,5 +171,8 @@ namespace Fewer.Library
         //}
 
 
+=======
+        
+>>>>>>> origin/Dima
     }
 }
