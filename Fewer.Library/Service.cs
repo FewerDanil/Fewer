@@ -5,8 +5,15 @@ using System.Linq;
 
 namespace Fewer.Library
 {
+    /// <summary>
+    /// File interaction service.
+    /// </summary>
     public static class Service
     {
+        /// <summary>
+        /// Returns disk's, that are ready for interactions.
+        /// </summary>
+        /// <returns>List of path's to disk's</returns>
         public static List<string> GetDisks()
         {
             List<string> disks = new List<string>();
@@ -14,7 +21,7 @@ namespace Fewer.Library
 
             foreach (DriveInfo drive in drives)
             {
-                if (drive.DriveType == DriveType.Fixed)
+                if (drive.DriveType == DriveType.Fixed && drive.IsReady)
                 {
                     disks.Add(drive.Name);
                 }
@@ -41,6 +48,10 @@ namespace Fewer.Library
             }
         }
 
+        /// <summary>
+        /// Searches for files using given settings.
+        /// </summary>
+        /// <returns></returns>
         public static List<File> GetFiles()
         {
             var filesInfos = new List<FileInfo>();
@@ -48,7 +59,7 @@ namespace Fewer.Library
             foreach (string disk in Settings.Disks)
             {
                 List<string> filesPaths = new List<string>();
-                AddFiles(disk + "totalcmd\\", filesPaths);
+                AddFiles(disk, filesPaths);
 
                 foreach(string filePath in filesPaths)
                 {
@@ -56,7 +67,7 @@ namespace Fewer.Library
 
                     try
                     {
-                        if (fileInfo.Length >= Settings.MinSize && fileInfo.LastAccessTime >= Settings.MinDate && fileInfo.IsReadOnly == false)
+                        if (fileInfo.Length >= Settings.MinSize && fileInfo.LastAccessTime <= Settings.MaxDate.AddDays(1) && fileInfo.IsReadOnly == false)
                         {
                             filesInfos.Add(fileInfo);
                         }
@@ -102,7 +113,7 @@ namespace Fewer.Library
                     }
                 }
 
-                File file = new File(filesInfos[i].FullName, filesInfos[i].Name, filesInfos[i].LastAccessTime, filesInfos[i].Length);
+                File file = new File(filesInfos[i].FullName);
                 files.Add(file);
             }
 
@@ -134,7 +145,7 @@ namespace Fewer.Library
             
             float sizeScore = (float)file.Size / ((float)maxSize - (float)minSize);
             float dateScore = (float)file.LastChange.Ticks / (float)maxDate.Ticks;
-            score = (sizeScore * 10) + (dateScore * 0);
+            score = (sizeScore * 5) + (dateScore * 5);
 
             if (score > 10.0f)
             {

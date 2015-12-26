@@ -25,22 +25,50 @@ namespace Fewer.Client
         {
             InitializeComponent();
 
-            minSizeTextBox.Text = ((float)Settings.MinSize / 1048576.0f).ToString();
-            minDateDatePicker.SelectedDate = Settings.MinDate;
+            switch (MainWindow.NominalComboBoxIndex)
+            {
+                case 0:
+                    minSizeTextBox.Text = (Settings.MinSize / 1024).ToString();
+                    break;
+                case 1:
+                    minSizeTextBox.Text = (Settings.MinSize / 1048576).ToString();
+                    break;
+                case 2:
+                    minSizeTextBox.Text = (Settings.MinSize / 1073741824).ToString();
+                    break;
+            }
 
-            this.Closing += SettingsWindow_Closing;
-        }
-
-        public void SettingsWindow_Closing(object sender, EventArgs e)
-        {
-            Settings.MinSize = (long)(float.Parse(minSizeTextBox.Text) * 1048576.0f);
-            Settings.MinDate = Convert.ToDateTime(minDateDatePicker.SelectedDate);
+            maxDateDatePicker.SelectedDate = Settings.MaxDate;
+            minSizeNominalComboBox.SelectedIndex = MainWindow.NominalComboBoxIndex;
         }
 
         private void NumberValidationTextBox(object sender, TextCompositionEventArgs e)
         {
             Regex regex = new Regex("[^0-9]+");
             e.Handled = regex.IsMatch(e.Text);
+        }
+
+        private void okButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (minSizeTextBox.Text.Length != 0)
+            {
+                switch (minSizeNominalComboBox.SelectedIndex)
+                {
+                    case 0:
+                        Settings.MinSize = (long)(float.Parse(minSizeTextBox.Text) * 1024.0f);
+                        break;
+                    case 1:
+                        Settings.MinSize = (long)(float.Parse(minSizeTextBox.Text) * 1048576.0f);
+                        break;
+                    case 2:
+                        Settings.MinSize = (long)(float.Parse(minSizeTextBox.Text) * 1073741824.0f);
+                        break;
+                }
+            }
+
+            Settings.MaxDate = Convert.ToDateTime(maxDateDatePicker.SelectedDate);
+            MainWindow.NominalComboBoxIndex = minSizeNominalComboBox.SelectedIndex;
+            this.Close();
         }
     }
 }

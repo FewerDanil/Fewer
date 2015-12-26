@@ -3,55 +3,90 @@ using System.IO;
 
 namespace Fewer.Library
 {
+    /// <summary>
+    /// File class.
+    /// </summary>
     public class File
     {
-        public string Name { get { return _name; } }
-        public string FullName { get { return _path; } }
-        public DateTime LastChange { get { return _lastChange; } }
-        public long Size { get { return _size; } }
-        public string SizeString { get { return string.Format("{0:0.#} mb", (float)Size / 1048576.0f); } }
+        /// <summary>
+        /// File name.
+        /// </summary>
+        public string Name { get { return _fileInfo.Name; } }
+
+        /// <summary>
+        /// Full file path.
+        /// </summary>
+        public string FullName { get { return _fileInfo.FullName ; } }
+
+        /// <summary>
+        /// Last file access date.
+        /// </summary>
+        public DateTime LastChange { get { return _fileInfo.LastAccessTime; } }
+
+        /// <summary>
+        /// File size.
+        /// </summary>
+        public long Size { get { return _fileInfo.Length; } }
+
+        /// <summary>
+        /// File size formatted.
+        /// </summary>
+        public string SizeString { get { return string.Format("{0:0.#} mb", (float)_fileInfo.Length / 1048576.0f); } }
+
+        /// <summary>
+        /// File score.
+        /// </summary>
         public float Score { get { return _score; } }
+
+        /// <summary>
+        /// File score formatted.
+        /// </summary>
         public string ScoreString { get { return string.Format("{0:0.#}", _score); } }
 
-        private string _name;
-        private string _path;
-        private DateTime _lastChange;
-        private long _size;
+        /// <summary>
+        /// Instance of FileInfo.
+        /// </summary>
+        private FileInfo _fileInfo;
+
+        /// <summary>
+        /// File score.
+        /// </summary>
         private float _score;
 
-        internal File (string path, string name, DateTime lastChange, long size)
+        /// <summary>
+        /// File constructor.
+        /// </summary>
+        /// <param name="path">Full path to file.</param>
+        internal File (string path)
         {
-            _path = path;
-            _name = name;
-            _lastChange = lastChange;
-            _size = size;
+            _fileInfo = new FileInfo(path);
+        }
+
+        /// <summary>
+        /// Set's file score.
+        /// </summary>
+        /// <param name="score">Score to set.</param>
+        internal void SetScore(float score)
+        {
+            _score = score;
         }
         
+        /// <summary>
+        /// Delete's file.
+        /// </summary>
+        /// <returns>True if file is successfully deleted. False if exception is thrown.</returns>
         internal bool Delete()
         {
             try
             {
-                FileInfo fileInfo = new FileInfo(_path);
-                fileInfo.Delete();
+                _fileInfo.Delete();
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
                 return false;
             }
 
             return true;
-        }
-
-        internal void SetScore(float score)
-        {
-            _score = score;
-        }
-
-        internal void test2()
-        {
-            var a = 0;
-
-            a++;
         }
     }
 }

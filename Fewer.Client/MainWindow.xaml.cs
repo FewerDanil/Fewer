@@ -23,6 +23,7 @@ namespace Fewer.Client
     /// </summary>
     public partial class MainWindow : Window
     {
+        public static int NominalComboBoxIndex = 2;
         private List<string> disks;
 
         public MainWindow()
@@ -31,8 +32,8 @@ namespace Fewer.Client
 
             disks = Service.GetDisks();
 
-            Settings.MinSize = 1 * 1024 * 1024;
-            Settings.MinDate = DateTime.Now.AddDays(-7);
+            Settings.MinSize = 1024 * 1024 * 1024;
+            Settings.MaxDate = DateTime.Now.AddDays(-7);
             Settings.Disks = disks;
 
             this.Loaded += MainWindow_Loaded;
@@ -98,7 +99,7 @@ namespace Fewer.Client
             window.ShowDialog();
         }
 
-        private void clearButton_Click(object sender, RoutedEventArgs e)
+        private void deleteButton_Click(object sender, RoutedEventArgs e)
         {
             List<File> filesToDelete = new List<File>();
             long totalSize = 0;
