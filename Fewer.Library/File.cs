@@ -6,11 +6,14 @@ namespace Fewer.Library
     public class File
     {
         public string Name { get; }
+        public string FullName { get { return _path; } }
         public DateTime LastChange { get; }
         public long Size { get; }
-        public string SizeString { get { return (Size / 1048576) + " mb"; } }
-        public float Score { get { return GetScore(); } }
+        public string SizeString { get { return string.Format("{0:0.#} mb", (float)Size / 1048576.0f); } }
+        public float Score { get { return _score; } }
+        public string ScoreString { get { return string.Format("{0:0.#}", _score); } }
 
+        private float _score;
         private string _path;
 
         internal File (string path, string name, DateTime lastChange, long size)
@@ -21,15 +24,24 @@ namespace Fewer.Library
             Size = size;
         }
         
-        internal void Delete()
+        internal bool Delete()
         {
-            FileInfo fileInfo = new FileInfo(_path);
-            fileInfo.Delete();
+            try
+            {
+                FileInfo fileInfo = new FileInfo(_path);
+                fileInfo.Delete();
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+
+            return true;
         }
 
-        internal float GetScore()
+        internal void SetScore(float score)
         {
-            return 1.0f;
+            _score = score;
         }
     }
 }

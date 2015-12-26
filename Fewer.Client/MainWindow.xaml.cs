@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -29,6 +30,11 @@ namespace Fewer.Client
             InitializeComponent();
 
             disks = Service.GetDisks();
+
+            Settings.MinSize = 1 * 1024 * 1024;
+            Settings.MinDate = DateTime.Now.AddDays(-7);
+            Settings.Disks = disks;
+
             this.Loaded += MainWindow_Loaded;
         }
 
@@ -47,13 +53,6 @@ namespace Fewer.Client
                 disksMenuItem.Items.Add(diskMenuItem);
                 id++;
             }
-
-            List<File> files = Service.GetFiles(new Settings(1000000, DateTime.Now.Add(TimeSpan.FromDays(-100)), disks));
-
-            foreach(var file in files)
-            {
-                filesListView.Items.Add(file);
-            }
         }
 
         void diskMenuItem_Click(object sender, EventArgs e)
@@ -61,6 +60,73 @@ namespace Fewer.Client
             int diskId = int.Parse(((MenuItem)sender).Name.Substring(1));
             MenuItem disk = (MenuItem)disksMenuItem.Items[diskId];
             disk.IsChecked = !disk.IsChecked;
+        }
+
+        private void analyzeButton_Click(object sender, RoutedEventArgs e)
+        {
+            scanProgressBar.Value = 0;
+            scanProgressLabel.Content = "0%";
+
+            List<string> settingsDisks = new List<string>();
+
+            foreach (MenuItem diskMenuItem in disksMenuItem.Items)
+            {
+                if(diskMenuItem.IsChecked)
+                {
+                    settingsDisks.Add(diskMenuItem.Header.ToString());
+                }
+            }
+
+            Settings.Disks = settingsDisks;
+
+            filesListView.Items.Clear();
+
+            List<File> files = Service.GetFiles();
+
+            foreach (var file in files)
+            {
+                filesListView.Items.Add(file);
+            }
+
+            scanProgressBar.Value = 100;
+            scanProgressLabel.Content = "100%";
+        }
+
+        private void settingsMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            SettingsWindow window = new SettingsWindow();
+            window.ShowDialog();
+        }
+
+        private void clearButton_Click(object sender, RoutedEventArgs e)
+        {
+            List<File> filesToDelete = new List<File>();
+            long totalSize = 0;
+
+            foreach(var selectedFile in filesListView.SelectedItems)
+            {
+                filesToDelete.Add((File)selectedFile);
+                totalSize += ((File)selectedFile).Size;
+            }
+
+            var response = MessageBox.Show(String.Format("That will free {0:0.#} Mb of space. Continue ?", (float)totalSize / 1048576.0f), "Confirmation needed", MessageBoxButton.YesNo);
+
+            if (response == MessageBoxResult.Yes)
+            {
+                var result = Service.DeleteFiles(filesToDelete);
+
+                if (result.Contains(false))
+                {
+                    MessageBox.Show("One or more files weren't deleted.");
+                }
+
+                analyzeButton_Click(null, null);
+            }
+        }
+
+        private void exitMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
         }
     }
 }

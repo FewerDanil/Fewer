@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Fewer.Library
 {
@@ -22,157 +23,129 @@ namespace Fewer.Library
             return disks;
         }
 
-<<<<<<< HEAD
-        public static List<File> GetFiles(Settings settings)
+        private static void AddFiles(string path, List<string> files)
         {
-            var files = new List<File>();
-
-            foreach (string disk in settings.Disks)
+            try
             {
-                string[] filesPaths = Directory.GetFiles(disk, "*.*", SearchOption.TopDirectoryOnly);
+                Directory.GetFiles(path)
+                    .ToList()
+                    .ForEach(s => files.Add(s));
+
+                Directory.GetDirectories(path)
+                    .ToList()
+                    .ForEach(s => AddFiles(s, files));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+
+            }
+        }
+
+        public static List<File> GetFiles()
+        {
+            var filesInfos = new List<FileInfo>();
+
+            foreach (string disk in Settings.Disks)
+            {
+                List<string> filesPaths = new List<string>();
+                AddFiles(disk + "test\\", filesPaths);
 
                 foreach(string filePath in filesPaths)
                 {
                     FileInfo fileInfo = new FileInfo(filePath);
 
-                    if(fileInfo.Length >= settings.MinSize && fileInfo.LastAccessTime >= settings.MinDate)
+                    try
                     {
-                        files.Add(new File(filePath, fileInfo.Name, fileInfo.LastAccessTime, fileInfo.Length));
+                        if (fileInfo.Length >= Settings.MinSize && fileInfo.LastAccessTime >= Settings.MinDate && fileInfo.IsReadOnly == false)
+                        {
+                            filesInfos.Add(fileInfo);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+
                     }
                 }
+            }
+
+            var files = new List<File>();
+            long minSize = 0, maxSize = 0;
+            DateTime minDate = DateTime.Now, maxDate = DateTime.Now;
+
+            for (int i = 0; i < filesInfos.Count; i++)
+            {
+                if(i == 0)
+                {
+                    minSize = filesInfos[i].Length;
+                    maxSize = filesInfos[i].Length;
+                    minDate = filesInfos[i].LastAccessTime;
+                    maxDate = filesInfos[i].LastAccessTime;
+                }
+                else
+                {
+                    if(filesInfos[i].Length < minSize)
+                    {
+                        minSize = filesInfos[i].Length;
+                    }
+                    else if(filesInfos[i].Length > maxSize)
+                    {
+                        maxSize = filesInfos[i].Length;
+                    }
+
+                    if (filesInfos[i].LastAccessTime < minDate)
+                    {
+                        minDate = filesInfos[i].LastAccessTime;
+                    }
+                    else if (filesInfos[i].LastAccessTime > maxDate)
+                    {
+                        minDate = filesInfos[i].LastAccessTime;
+                    }
+                }
+
+                File file = new File(filesInfos[i].FullName, filesInfos[i].Name, filesInfos[i].LastAccessTime, filesInfos[i].Length);
+                files.Add(file);
+            }
+
+            foreach(File file in files)
+            {
+                SetScore(file, minSize, maxSize, minDate, maxDate);
             }
 
             return files;
         }
-        /*
-        public static List<File> GetFiles(Settings settings)
-        {
-            List<File> files = new List<File>();
-=======
-        public static List<File> GetFiles()
-        {
-            if(!Settings.IsSet) Settings.SetSettings();
 
-            List<File> listFile = new List<File>();  // list for return
->>>>>>> origin/Dima
-            long maxSize = 0;
-            long minSize = 0;
-            DateTime minDate = DateTime.Now;
-            DateTime maxDate = DateTime.Now;
+        public static List<bool> DeleteFiles(List<File> files)
+        {
+            List<bool> results = new List<bool>();
 
-<<<<<<< HEAD
-            foreach (var disk in settings.Disks) //scan every disk
-=======
-            foreach (var disk in Settings.Disks) //scan every disk
->>>>>>> origin/Dima
+            foreach(File file in files)
             {
-                String[] allFiles = Directory.GetFiles(disk, "*.*", System.IO.SearchOption.AllDirectories); // get all file names in disk(directory)
-                List<FileInfo> files = new List<FileInfo>();
-                foreach (var file in allFiles)  // init FileInfo list
-                {
-                    FileInfo fi = new FileInfo(file);
-                    files.Add(fi);
-                }
+                var result = file.Delete();
 
-                maxSize = files[0].Length;
-                minSize = files[0].Length;
-                maxDate = files[0].CreationTime;
-                minDate = files[0].CreationTime;
-
-                foreach (var item in files)
-                {
-                    if (item.Length > maxSize) maxSize = item.Length;
-                    if (item.Length < minSize) minSize = item.Length;
-                    if (item.CreationTime < minDate) minDate = item.CreationTime;
-                    if (item.CreationTime > maxDate) maxDate = item.CreationTime;
-
-                    if (item.Length > Settings.MinSize && item.CreationTime < Settings.MinDate)
-                    {
-                        File file = new File(item.FullName);
-                        file.FileTime = item.CreationTime;
-                        file.FileSize = item.Length;
-                        listFile.Add(file);
-                    }
-                }
+                results.Add(result);
             }
-            SortFiles(listFile, SortingCriteria.FileSize);
-            SortFiles(listFile, SortingCriteria.FileUseDate);
-            return listFile;
+
+            return results;
         }
 
-        public static List<File> SortFiles(List<File> files, SortingCriteria sortingCriteria)
-        {           
-            switch (sortingCriteria)
-            {                
-                case SortingCriteria.FileSize:
-
-                    files.Sort((a, b) => a.FileSize.CompareTo(b.FileSize));
-                    SetFilePriority(files, SortingCriteria.FileSize);
-                    return files;
-
-                case SortingCriteria.FileUseDate:
-
-                     files.Sort((a, b) => a.FileTime.CompareTo(b.FileTime));
-                     SetFilePriority(files, SortingCriteria.FileUseDate);
-                     return files;
-                    
-                default:                    
-                        return files;
-                    
-            }
-        }
-
-
-        static void SetFilePriority(List<File> fileList, SortingCriteria sort)
+        private static void SetScore(File file, long minSize, long maxSize, DateTime minDate, DateTime maxDate)
         {
-           
-            double koef = GetKoef(fileList.Count);
+            float score;
+            
+            float sizeScore = (float)file.Size / ((float)maxSize - (float)minSize);
+            float dateScore = (float)file.LastChange.Ticks / (float)maxDate.Ticks;
+            score = (sizeScore * 10) + (dateScore * 0);
 
-            if (sort == SortingCriteria.FileUseDate)
+            if (score > 10.0f)
             {
-                int count = fileList.Count;
-                foreach (File item in fileList)
-                {
-                    item.FilePriorityTime = (int)(count * koef);
-                    count--;
-                }
+                score = 10.0f;
             }
-            else
+            else if(float.IsNaN(score))
             {
-                int count = 1;
-                foreach (File item in fileList)
-                {
-                    item.FilePrioritySize = (int)(count * koef);
-                    count++;
-                }
+                score = 0;
             }
+
+            file.SetScore(score);
         }
-
-
-        static double GetKoef(int length, int range = 100)
-        {
-            return range / length;
-        }
-
-        public static void DeleteFiles(List<File> files)
-        {
-            foreach (var item in files)
-            {
-                item.Delete();               
-            }
-        }                
-<<<<<<< HEAD
-        */
-        //static int FileDateRating(DateTime currentFileTime, DateTime minDate, DateTime maxDate)
-        //{
-        //    int dif = maxDate.Minute - minDate.Minute;
-        //    int ratingTime = currentFileTime.Minute * dif / 100;
-        //    return ratingTime;
-        //}
-
-
-=======
-        
->>>>>>> origin/Dima
     }
 }
