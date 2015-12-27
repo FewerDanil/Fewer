@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Fewer.Library
 {
@@ -30,6 +31,11 @@ namespace Fewer.Library
             return disks;
         }
 
+        /// <summary>
+        /// Recursively scans directories for files and adds them into the given list.
+        /// </summary>
+        /// <param name="path">Path to search in.</param>
+        /// <param name="files">List of files to add in.</param>
         private static void AddFiles(string path, List<string> files)
         {
             try
@@ -42,16 +48,16 @@ namespace Fewer.Library
                     .ToList()
                     .ForEach(s => AddFiles(s, files));
             }
-            catch (UnauthorizedAccessException ex)
+            catch (Exception exception)
             {
-
+                //Not enough rights.
             }
         }
 
         /// <summary>
         /// Searches for files using given settings.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>List of found files.</returns>
         public static List<File> GetFiles()
         {
             var filesInfos = new List<FileInfo>();
@@ -72,9 +78,9 @@ namespace Fewer.Library
                             filesInfos.Add(fileInfo);
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception exception)
                     {
-
+                        //File not found.
                     }
                 }
             }
@@ -125,6 +131,11 @@ namespace Fewer.Library
             return files;
         }
 
+        /// <summary>
+        /// Deletes given list of files.
+        /// </summary>
+        /// <param name="files">List of files to delete.</param>
+        /// <returns>List of bools. Each value represents failure or success of file delete.</returns>
         public static List<bool> DeleteFiles(List<File> files)
         {
             List<bool> results = new List<bool>();
@@ -139,6 +150,14 @@ namespace Fewer.Library
             return results;
         }
 
+        /// <summary>
+        /// Sets score for given file using given parameters.
+        /// </summary>
+        /// <param name="file">File to set score in.</param>
+        /// <param name="minSize">Minimal size of file in list.</param>
+        /// <param name="maxSize">Maximal size of file in list.</param>
+        /// <param name="minDate">Minimal file access date in list.</param>
+        /// <param name="maxDate">Maximal file access date in list.</param>
         private static void SetScore(File file, long minSize, long maxSize, DateTime minDate, DateTime maxDate)
         {
             float score;

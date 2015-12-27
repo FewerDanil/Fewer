@@ -14,9 +14,13 @@ namespace Fewer.Library
         public static long MinSize { get; set; }
 
         /// <summary>
-        /// Maximal date 
+        /// Maximal date.
         /// </summary>
         public static DateTime MaxDate { get; set; }
+
+        /// <summary>
+        /// List of disks to search in.
+        /// </summary>
         public static List<string> Disks { get; set; }
     }
 }

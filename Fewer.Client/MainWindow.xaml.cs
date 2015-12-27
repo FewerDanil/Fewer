@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -25,10 +26,14 @@ namespace Fewer.Client
     {
         public static int NominalComboBoxIndex = 2;
         private List<string> disks;
+        private Thread thread;
+        private bool isAnalyzing = false;
 
         public MainWindow()
         {
             InitializeComponent();
+
+            deleteButton.IsEnabled = false;
 
             disks = Service.GetDisks();
 
@@ -65,32 +70,74 @@ namespace Fewer.Client
 
         private void analyzeButton_Click(object sender, RoutedEventArgs e)
         {
-            scanProgressBar.Value = 0;
-            scanProgressLabel.Content = "0%";
-
-            List<string> settingsDisks = new List<string>();
-
-            foreach (MenuItem diskMenuItem in disksMenuItem.Items)
+            if(!isAnalyzing)
             {
-                if(diskMenuItem.IsChecked)
+                scanProgressBar.Value = 0;
+                scanProgressLabel.Content = "0%";
+                filesListView.Items.Clear();
+
+                List<string> settingsDisks = new List<string>();
+
+                foreach (MenuItem diskMenuItem in disksMenuItem.Items)
                 {
-                    settingsDisks.Add(diskMenuItem.Header.ToString());
+                    if (diskMenuItem.IsChecked)
+                    {
+                        settingsDisks.Add(diskMenuItem.Header.ToString());
+                    }
                 }
+
+                Settings.Disks = settingsDisks;
+
+                thread = new Thread(startAnalyze);
+                thread.Start();
             }
+            else
+            {
+                stopAnalyze();
+            }
+        }
 
-            Settings.Disks = settingsDisks;
+        private void stopAnalyze()
+        {
+            if (isAnalyzing)
+            {
+                thread.Abort();
 
-            filesListView.Items.Clear();
+                scanProgressBar.Value = 0;
+                scanProgressLabel.Content = "0%";
+                filesListView.Items.Clear();
 
+                isAnalyzing = false;
+                analyzeButton.Content = "Analyze";
+                deleteButton.IsEnabled = false;
+            }
+        }
+
+        private void startAnalyze()
+        {
+            isAnalyzing = true;
+            Dispatcher.BeginInvoke(new ThreadStart(delegate
+            {
+                analyzeButton.Content = "Cancel analyze";
+                deleteButton.IsEnabled = false;
+            }));
             List<File> files = Service.GetFiles();
 
             foreach (var file in files)
             {
-                filesListView.Items.Add(file);
+                Dispatcher.BeginInvoke(new ThreadStart(delegate { filesListView.Items.Add(file); }));
             }
 
-            scanProgressBar.Value = 100;
-            scanProgressLabel.Content = "100%";
+            Dispatcher.BeginInvoke(new ThreadStart(delegate {
+                scanProgressBar.Value = 100;
+                scanProgressLabel.Content = "100%";
+            }));
+            isAnalyzing = false;
+            Dispatcher.BeginInvoke(new ThreadStart(delegate
+            {
+                analyzeButton.Content = "Analyze";
+                deleteButton.IsEnabled = true;
+            }));
         }
 
         private void settingsMenuItem_Click(object sender, RoutedEventArgs e)
@@ -104,7 +151,7 @@ namespace Fewer.Client
             List<File> filesToDelete = new List<File>();
             long totalSize = 0;
 
-            foreach(var selectedFile in filesListView.SelectedItems)
+            foreach (var selectedFile in filesListView.SelectedItems)
             {
                 filesToDelete.Add((File)selectedFile);
                 totalSize += ((File)selectedFile).Size;
