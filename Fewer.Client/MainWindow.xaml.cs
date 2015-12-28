@@ -26,6 +26,7 @@ namespace Fewer.Client
     {
         public static int NominalComboBoxIndex = 2;
         private List<string> disks;
+        List<File> files;
         private Thread thread;
         private bool isAnalyzing = false;
 
@@ -36,7 +37,7 @@ namespace Fewer.Client
             deleteButton.IsEnabled = false;
 
             disks = Service.GetDisks();
-
+            files = new List<File>();
             Settings.MinSize = 1024 * 1024 * 1024;
             Settings.MaxDate = DateTime.Now.AddDays(-7);
             Settings.Disks = disks;
@@ -121,12 +122,10 @@ namespace Fewer.Client
                 analyzeButton.Content = "Cancel analyze";
                 deleteButton.IsEnabled = false;
             }));
-            List<File> files = Service.GetFiles();
+            
+            files = Service.GetFiles();
 
-            foreach (var file in files)
-            {
-                Dispatcher.BeginInvoke(new ThreadStart(delegate { filesListView.Items.Add(file); }));
-            }
+            UpdateListView();
 
             Dispatcher.BeginInvoke(new ThreadStart(delegate {
                 scanProgressBar.Value = 100;
@@ -138,6 +137,19 @@ namespace Fewer.Client
                 analyzeButton.Content = "Analyze";
                 deleteButton.IsEnabled = true;
             }));
+        }
+
+        private void UpdateListView()
+        {
+            foreach (var file in files)
+            {
+                Dispatcher.BeginInvoke(new ThreadStart(delegate { filesListView.Items.Clear(); }));
+            }
+
+            foreach (var file in files)
+            {
+                Dispatcher.BeginInvoke(new ThreadStart(delegate { filesListView.Items.Add(file); }));
+            }
         }
 
         private void settingsMenuItem_Click(object sender, RoutedEventArgs e)
@@ -176,5 +188,34 @@ namespace Fewer.Client
         {
             Application.Current.Shutdown();
         }
+
+        private void GridViewColumnHeaderClickedHandler(object sender, RoutedEventArgs e)
+        {
+            string[] arr = e.OriginalSource.ToString().Split(':');
+            string str = (arr[arr.Length - 1]).Trim().ToLower();
+            switch (str)
+            { 
+                case "name":
+                    Service.SortFiles(files, SortingCriteria.FileName);
+                    break;
+                case "path":
+                    Service.SortFiles(files, SortingCriteria.FilePath);
+                    break;
+                case "last change date":
+                    Service.SortFiles(files, SortingCriteria.FileUseDate);
+                    break;
+                case "size":
+                    Service.SortFiles(files, SortingCriteria.FileSize);
+                    break;
+                case "score":
+                    Service.SortFiles(files, SortingCriteria.FileScore);
+                    break;
+                default:
+                    break;
+            }
+            UpdateListView();
+        }
+
+        
     }
 }

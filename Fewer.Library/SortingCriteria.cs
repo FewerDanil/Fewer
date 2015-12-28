@@ -8,6 +8,14 @@ namespace Fewer.Library
     public enum SortingCriteria
     {
         /// <summary>
+        /// Sort by file name.
+        /// </summary>
+        FileName,        
+        /// <summary>
+        /// Sort by file path.
+        /// </summary>
+        FilePath,
+        /// <summary>
         /// Sort by file size.
         /// </summary>
         FileSize,

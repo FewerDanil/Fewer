@@ -177,5 +177,34 @@ namespace Fewer.Library
 
             file.SetScore(score);
         }
+
+        public static List<File> SortFiles(List<File> files, SortingCriteria sortingCriteria)
+        {
+            switch (sortingCriteria)
+            {
+                case SortingCriteria.FileName:
+                    files.Sort((a, b) => a.Name.CompareTo(b.Name));
+                    return files;
+
+                case SortingCriteria.FilePath:
+                    files.Sort((a, b) => a.FullName.CompareTo(b.FullName));
+                    return files;
+                
+                case SortingCriteria.FileSize:
+
+                    files.Sort((a, b) => a.Size.CompareTo(b.Size));
+                    return files;
+
+                case SortingCriteria.FileUseDate:
+                    files.Sort((a, b) => a.LastChange.CompareTo(b.LastChange));
+                    return files;
+
+                case SortingCriteria.FileScore:
+                    files.Sort((a, b) => a.Score.CompareTo(b.Score));
+                    return files;
+
+                default: return files;
+            }
+        }
     }
 }

@@ -34,10 +34,12 @@
                 <Label x:Name="scanProgressLabel" Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="10" Content="0%"/>
             </Grid>
             <Grid Grid.Row="1">
-                <ListView Name="filesListView" Margin="10, 0">
+                <ListView Name="filesListView" 
+                          Margin="10, 0" GridViewColumnHeader.Click="GridViewColumnHeaderClickedHandler">                    
                     <ListView.View>
                         <GridView>
                             <GridView.Columns>
+                                
                                 <GridViewColumn Width="100" Header="Name" DisplayMemberBinding="{Binding Name}"/>
                                 <GridViewColumn Width="100" Header="Path" DisplayMemberBinding="{Binding FullName}"/>
                                 <GridViewColumn Width="100" Header="Size" DisplayMemberBinding="{Binding SizeString}"/>
