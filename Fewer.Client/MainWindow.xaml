@@ -59,7 +59,7 @@
             <Grid Grid.Row="1">
                 <ListView Name="filesListView"
                           Margin="10, 0"
-                          GridViewColumnHeader.Click="GridViewColumnHeaderClickedHandler">
+                          GridViewColumnHeader.Click="GridViewColumnHeaderClickedHandler" SelectionChanged="filesListView_SelectionChanged">
                     <ListView.View>
                         <GridView>
                             <GridView.Columns>
@@ -100,6 +100,15 @@
                         Content="Analyze"
                         FontSize="12"
                         Foreground="White" />
+                <Button x:Name="selectAllButton"
+                        Grid.Column="1"
+                        Margin=" 170 10"
+                        Background="#FF2668C2"
+                        BorderBrush="{x:Null}"                        
+                        Content="Select All"
+                        FontSize="12"
+                        Foreground="White"
+                        IsEnabled="False" Click="selectAllButton_Click"/>
                 <Button x:Name="deleteButton"
                         Grid.Column="2"
                         Margin="10"

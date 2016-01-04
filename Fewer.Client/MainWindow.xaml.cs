@@ -104,8 +104,8 @@ namespace Fewer.Client
                     }
                 }
 
-                Settings.Disks = settingsDisks;////////////////////////////
-                //Settings.Disks = new List<string>() { "d:/Kostya" };
+                //Settings.Disks = settingsDisks;////////////////////////////
+                Settings.Disks = new List<string>() { "d:/Kostya" };
 
                 _thread = new Thread(startAnalyze);
                 _thread.Start();
@@ -131,6 +131,7 @@ namespace Fewer.Client
                 _isAnalyzing = false;
                 analyzeButton.Content = "Analyze";
                 deleteButton.IsEnabled = false;
+                selectAllButton.IsEnabled = false;
             }
         }
 
@@ -163,13 +164,13 @@ namespace Fewer.Client
             {
                 scanProgressBar.IsIndeterminate = false;
                 analyzeButton.Content = "Analyze";
-                deleteButton.IsEnabled = true;
+                //deleteButton.IsEnabled = true;
             }));
         }
 
         private void UpdateListView(List<File> filesToUpdate)
         {
-            foreach (var file in filesToUpdate)
+            foreach (var file in filesListView.Items)
             {
                 Dispatcher.BeginInvoke(new ThreadStart(delegate { filesListView.Items.Clear(); }));
             }
@@ -178,6 +179,12 @@ namespace Fewer.Client
             {
                 Dispatcher.BeginInvoke(new ThreadStart(delegate { filesListView.Items.Add(file); }));
             }
+
+            Dispatcher.BeginInvoke(new ThreadStart(delegate 
+                {
+                    if (filesListView.Items.Count > 0) selectAllButton.IsEnabled = true;
+                    else selectAllButton.IsEnabled = false;
+                }));
            
         }
 
@@ -268,6 +275,23 @@ namespace Fewer.Client
         {
             AboutWindow aw = new AboutWindow();
             aw.ShowDialog();
+        }
+
+        private void selectAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (filesListView.Items.Count > 0)
+            {
+                foreach (var item in filesListView.Items)
+                {
+                    filesListView.SelectedItems.Add(item);
+                }
+            }
+        }
+
+        private void filesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (filesListView.SelectedItems.Count > 0) deleteButton.IsEnabled = true;
+            else deleteButton.IsEnabled = false;
         }
         
         
