@@ -16,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace Fewer.Client
 {
@@ -25,10 +26,15 @@ namespace Fewer.Client
     public partial class MainWindow : Window
     {
         public static int NominalComboBoxIndex = 2;
-        private List<string> disks;
-        List<File> files;
-        private Thread thread;
-        private bool isAnalyzing = false;
+        private List<string> _disks;
+        List<File> _files;
+        private Thread _thread;
+        private bool _isAnalyzing = false;
+        private static bool _sortDirection = true;
+        DispatcherTimer dispatcherTimer = new DispatcherTimer();
+
+        private bool _timer;
+            
 
         public MainWindow()
         {
@@ -36,20 +42,21 @@ namespace Fewer.Client
 
             deleteButton.IsEnabled = false;
 
-            disks = Service.GetDisks();
-            files = new List<File>();
+            _disks = Service.GetDisks();
+            _files = new List<File>();
             Settings.MinSize = 1024 * 1024 * 1024;
             Settings.MaxDate = DateTime.Now.AddDays(-7);
-            Settings.Disks = disks;
+            Settings.Disks = _disks;           
 
             this.Loaded += MainWindow_Loaded;
+            _timer = true;
         }
 
         void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             int id = 0;
 
-            foreach (var disk in disks)
+            foreach (var disk in _disks)
             {
                 MenuItem diskMenuItem = new MenuItem();
                 diskMenuItem.Header = disk;
@@ -60,6 +67,16 @@ namespace Fewer.Client
                 disksMenuItem.Items.Add(diskMenuItem);
                 id++;
             }
+
+            dispatcherTimer.Tick += dispatcherTimer_Tick;
+            dispatcherTimer.Interval = new TimeSpan(0, 0, 1);            
+        }
+
+        private void dispatcherTimer_Tick(object sender, EventArgs e)
+        {
+            _timer = !_timer;
+            if(_timer) scanProgressLabel.Visibility = Visibility.Hidden;
+            else scanProgressLabel.Visibility = Visibility.Visible;
         }
 
         void diskMenuItem_Click(object sender, EventArgs e)
@@ -71,10 +88,10 @@ namespace Fewer.Client
 
         private void analyzeButton_Click(object sender, RoutedEventArgs e)
         {
-            if(!isAnalyzing)
+            if(!_isAnalyzing)
             {
-                scanProgressBar.Value = 0;
-                scanProgressLabel.Content = "0%";
+               // scanProgressBar.Value = 0;
+               // scanProgressLabel.Content = "0%";
                 filesListView.Items.Clear();
 
                 List<string> settingsDisks = new List<string>();
@@ -87,10 +104,11 @@ namespace Fewer.Client
                     }
                 }
 
-                Settings.Disks = settingsDisks;
+                Settings.Disks = settingsDisks;////////////////////////////
+                //Settings.Disks = new List<string>() { "d:/Kostya" };
 
-                thread = new Thread(startAnalyze);
-                thread.Start();
+                _thread = new Thread(startAnalyze);
+                _thread.Start();
             }
             else
             {
@@ -100,15 +118,17 @@ namespace Fewer.Client
 
         private void stopAnalyze()
         {
-            if (isAnalyzing)
+            if (_isAnalyzing)
             {
-                thread.Abort();
-
+                _thread.Abort();
+                dispatcherTimer.Stop();
+                scanProgressBar.IsIndeterminate = false;
+                scanProgressLabel.Content = "";
                 scanProgressBar.Value = 0;
-                scanProgressLabel.Content = "0%";
+                //scanProgressLabel.Content = "0%";
                 filesListView.Items.Clear();
 
-                isAnalyzing = false;
+                _isAnalyzing = false;
                 analyzeButton.Content = "Analyze";
                 deleteButton.IsEnabled = false;
             }
@@ -116,42 +136,52 @@ namespace Fewer.Client
 
         private void startAnalyze()
         {
-            isAnalyzing = true;
+            _isAnalyzing = true;
+            
             Dispatcher.BeginInvoke(new ThreadStart(delegate
             {
+                scanProgressBar.IsIndeterminate = true;
+                scanProgressLabel.Content = "Scanning in progress...";
+                dispatcherTimer.Start();
+                
                 analyzeButton.Content = "Cancel analyze";
                 deleteButton.IsEnabled = false;
             }));
             
-            files = Service.GetFiles();
+            _files = Service.GetFiles();
 
-            UpdateListView();
+            UpdateListView(_files);
 
             Dispatcher.BeginInvoke(new ThreadStart(delegate {
                 scanProgressBar.Value = 100;
-                scanProgressLabel.Content = "100%";
+                dispatcherTimer.Stop();
+                scanProgressLabel.Content = "Scanning completed!";
             }));
-            isAnalyzing = false;
+            
+            _isAnalyzing = false;
             Dispatcher.BeginInvoke(new ThreadStart(delegate
             {
+                scanProgressBar.IsIndeterminate = false;
                 analyzeButton.Content = "Analyze";
                 deleteButton.IsEnabled = true;
             }));
         }
 
-        private void UpdateListView()
+        private void UpdateListView(List<File> filesToUpdate)
         {
-            foreach (var file in files)
+            foreach (var file in filesToUpdate)
             {
                 Dispatcher.BeginInvoke(new ThreadStart(delegate { filesListView.Items.Clear(); }));
             }
 
-            foreach (var file in files)
+            foreach (var file in filesToUpdate)
             {
                 Dispatcher.BeginInvoke(new ThreadStart(delegate { filesListView.Items.Add(file); }));
             }
+           
         }
 
+        
         private void settingsMenuItem_Click(object sender, RoutedEventArgs e)
         {
             SettingsWindow window = new SettingsWindow();
@@ -160,6 +190,7 @@ namespace Fewer.Client
 
         private void deleteButton_Click(object sender, RoutedEventArgs e)
         {
+            List<File> filesToStay = new List<File>();
             List<File> filesToDelete = new List<File>();
             long totalSize = 0;
 
@@ -178,9 +209,20 @@ namespace Fewer.Client
                 if (result.Contains(false))
                 {
                     MessageBox.Show("One or more files weren't deleted.");
+                    analyzeButton_Click(null, null);
                 }
-
-                analyzeButton_Click(null, null);
+                else
+                {
+                    foreach (var item in _files)
+                    {
+                        if (!filesToDelete.Contains(item))
+                        {
+                            filesToStay.Add(item);
+                        }
+                    }
+                    UpdateListView(filesToStay);
+                    scanProgressLabel.Content = "Deleting completed!"; 
+                }                               
             }
         }
 
@@ -188,34 +230,48 @@ namespace Fewer.Client
         {
             Application.Current.Shutdown();
         }
-
+                
         private void GridViewColumnHeaderClickedHandler(object sender, RoutedEventArgs e)
         {
             string[] arr = e.OriginalSource.ToString().Split(':');
-            string str = (arr[arr.Length - 1]).Trim().ToLower();
+            string str = (arr[arr.Length - 1]).Trim().ToLower();            
+
             switch (str)
             { 
-                case "name":
-                    Service.SortFiles(files, SortingCriteria.FileName);
+                case "name":                    
+                    Service.SortFiles(_files, SortingCriteria.FileName);
                     break;
                 case "path":
-                    Service.SortFiles(files, SortingCriteria.FilePath);
+                    Service.SortFiles(_files, SortingCriteria.FilePath);
                     break;
                 case "last change date":
-                    Service.SortFiles(files, SortingCriteria.FileUseDate);
+                    Service.SortFiles(_files, SortingCriteria.FileUseDate);
                     break;
                 case "size":
-                    Service.SortFiles(files, SortingCriteria.FileSize);
+                    Service.SortFiles(_files, SortingCriteria.FileSize);
                     break;
                 case "score":
-                    Service.SortFiles(files, SortingCriteria.FileScore);
+                    Service.SortFiles(_files, SortingCriteria.FileScore);
                     break;
                 default:
                     break;
             }
-            UpdateListView();
+            _sortDirection = !_sortDirection;
+            if (_sortDirection)
+            {
+                _files.Reverse();
+            }
+            UpdateListView(_files);
         }
 
+        private void about_Click(object sender, RoutedEventArgs e)
+        {
+            AboutWindow aw = new AboutWindow();
+            aw.ShowDialog();
+        }
         
+        
+      
+
     }
 }
