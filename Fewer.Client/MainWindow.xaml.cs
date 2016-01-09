@@ -104,8 +104,7 @@ namespace Fewer.Client
                     }
                 }
 
-                //Settings.Disks = settingsDisks;////////////////////////////
-                Settings.Disks = new List<string>() { "d:/Kostya" };
+                Settings.Disks = settingsDisks;
 
                 _thread = new Thread(startAnalyze);
                 _thread.Start();

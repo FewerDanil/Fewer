@@ -164,7 +164,7 @@ namespace Fewer.Library
             
             float sizeScore = (float)file.Size / ((float)maxSize - (float)minSize);
             float dateScore = (float)file.LastChange.Ticks / (float)maxDate.Ticks;
-            score = (sizeScore * 5) + (dateScore * 5);
+            score = (sizeScore * 10);
 
             if (score > 10.0f)
             {
